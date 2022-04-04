@@ -55,9 +55,35 @@ def get_name_count(names):
 def get_person_name_count_details(input_data):
     person_names = named_entity_recognition(input_data, "PERSON")
     name_count, name_boolean = get_name_count(person_names)
-    print(person_name_count)
-    print(person_name_boolean)
+    # print(person_name_count)
+    # print(person_name_boolean)
     return name_count, name_boolean
+
+
+def get_conjunction_phrases(input_data):
+    questions = input_data["Question"]
+    conjunction_count = []
+    for question in questions:
+        count = 0
+        doc = nlp(question)
+        for token in doc:
+            if token.dep_ == "cc":
+                count += 1
+        conjunction_count.append(count)
+    return conjunction_count
+
+
+def get_prepositional_phrases(input_data):
+    questions = input_data["Question"]
+    preposition_count = []
+    for question in questions:
+        count = 0
+        doc = nlp(question)
+        for token in doc:
+            if token.dep_ == "prep":
+                count += 1
+        preposition_count.append(count)
+    return preposition_count
 
 
 if __name__ == '__main__':
@@ -72,6 +98,12 @@ if __name__ == '__main__':
 
     # Find all person names in a given sentence
     person_name_count, person_name_boolean = get_person_name_count_details(data)
+
+    # Find all conjunction phrases in a given sentence
+    conjunction_phrase_count = get_conjunction_phrases(data)
+
+    # Find all prepositional phrases in a given sentence
+    preposition_phrase_count = get_prepositional_phrases(data)
 
     # Finally append all the relevant columns
     data_language_features['question_length'] = np.array(ques_length)
