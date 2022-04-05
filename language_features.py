@@ -86,12 +86,25 @@ def get_prepositional_phrases(input_data):
     return preposition_count
 
 
+def get_math_symbol_count(input_data):
+    questions = input_data['Question']
+    symbols = ['+', '-', '*', '/', '=', '>', '<', '^', '%']
+    math_symbol_count = []
+    for question in questions:
+        count = 0
+        for character in question:
+            if character in symbols:
+                count += 1
+        math_symbol_count.append(count)
+    return math_symbol_count
+
+
 if __name__ == '__main__':
     nlp = spacy.load("en_core_web_sm")
     data = read_from_file("More_Processed_Data.csv")
 
-    # This will be the final dataframe
-    data_language_features = data.copy()
+    # Get rid of all the questions those are attempted by less than 5 students
+    data = data[data['num students'] > 5].reset_index(drop=True)
 
     # Extract sentence length
     ques_length = compute_question_length(data)
@@ -105,6 +118,20 @@ if __name__ == '__main__':
     # Find all prepositional phrases in a given sentence
     preposition_phrase_count = get_prepositional_phrases(data)
 
+    # Find all occurrences of math symbols
+    math_symbols = get_math_symbol_count(data)
+
+    # This will be the final dataframe
+    data_language_features = data.copy()
+
     # Finally append all the relevant columns
     data_language_features['question_length'] = np.array(ques_length)
+    data_language_features['person_name_count'] = np.array(person_name_count)
+    data_language_features['person_name_boolean'] = np.array(person_name_boolean)
+    data_language_features['conjunction_phrase_count'] = np.array(conjunction_phrase_count)
+    data_language_features['preposition_phrase_count'] = np.array(preposition_phrase_count)
+    data_language_features['math_symbols_count'] = np.array(math_symbols)
+
     print(data_language_features.head())
+
+    data_language_features.to_csv("Language_Processed_Data.csv")
