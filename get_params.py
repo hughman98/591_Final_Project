@@ -4,37 +4,38 @@ import pandas as pd
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import r2_score, mean_squared_error, make_scorer
 
 from sklearn.inspection import PartialDependenceDisplay
 import matplotlib.pyplot as plt
 
 from warnings import simplefilter
 from sklearn.exceptions import ConvergenceWarning
+
 simplefilter("ignore", category=ConvergenceWarning)
 
 
 def find_parameters(X, y):
-    regressor = MLPRegressor(max_iter=20)
+    regressor = MLPRegressor(max_iter=10000, early_stopping=True)
     parameters = {
-        'hidden_layer_sizes': [(30, 30, 30, 30), (30, 30, 30, 10), (20, 20, 20, 20), (30, 30, 30), (20, 20, 20),
-                               (30, 20, 20), (90, 10)],
+        'hidden_layer_sizes': [(30, 30, 30), (30, 30, 30, 30), (30, 30, 30, 10), (50, 50, 50, 50), (100, 50, 50)],
         'activation': ['logistic', 'tanh', 'relu'],
         'solver': ['adam'],
-        'alpha': [0.001, 0.01, .05],
-        'learning_rate': ['constant', 'adaptive'],
+        'alpha': [0.001, 0.01, .05, .1],
+        'learning_rate': ['adaptive'],
     }
 
-    search = GridSearchCV(regressor, parameters, n_jobs=-1, cv=5)
+    search = GridSearchCV(regressor, parameters, n_jobs=-1, cv=5, scoring="r2")
     search.fit(X, y)
 
     features = ['tot_time_spent', 'num_success']
 
     # This was just a test for myself to see how plotting PartialDependence graphs works. Turns out: super easy
-    #graph = PartialDependenceDisplay.from_estimator(search, X, features)
+    # graph = PartialDependenceDisplay.from_estimator(search, X, features)
 
-    #plt.show()
+    # plt.show()
 
-    return search.best_params_
+    return search.best_params_, search.best_score_
 
 
 # Preprocesses data and returns the "input" data and "ouput" data that is used to train the regressors.
@@ -44,79 +45,103 @@ def find_parameters(X, y):
 #
 def get_in_out():
     print('importing csv...')
-    input = pd.read_csv("More_Processed_Data.csv")
+    input = pd.read_csv("dataHotEncoding.csv")
 
     # set target to be average time
-    output = input['average time to solve']
+    output_t = input['average time to solve']
+    output_s = input['success_rate']
 
-    # Remove average time and non-desirable columns from training set
+    # Remove "output" columns and other non-desirable columns from training set
     input = input.drop(['average time to solve'], axis=1)
+    input = input.drop(['success_rate'], axis=1)
+
     input = input.drop(['Question'], axis=1)
+    input = input.drop(['tot_time_spent'], axis=1)
+    input = input.drop(['num students'], axis=1)
+    input = input.drop(['num_success'], axis=1)
+    input = input.drop(['num_failed'], axis=1)
 
-    input = input.drop(['KC3'], axis=1)  # Always empty
+    t_attributes = ['person_name_count',  # Columns to consider for average time
+                    # 'person_name_boolean',
+                    'conjunction_phrase_count',
+                    'preposition_phrase_count',
+                    'math_symbols_count',
+                    'Sum-Of-Interior-Angles-more-than-3-Sides',
+                    'Mean',
+                    'Unit-Conversion',
+                    'Inducing-Functions',
+                    'person_name_count',
+                    'conjunction_phrase_count',
+                    'Percent-Of',
+                    'Rate',
+                    'Pattern-Finding',
+                    'Venn-Diagram',
+                    'Discount',
+                    'Finding-Percents',
+                    'Divide-Decimals',
+                    'Square-Root',
+                    'Subtraction',
+                    'Fraction-Division',
+                    'Interpreting-Numberline',
+                    'Probability',
+                    'Sum-of-Interior-Angles-Triangle',
+                    'Equivalent-Fractions-Decimals-Percents',
+                    'Addition',
+                    'num_success',
+                    'Fraction-Decimals-Percents',
+                    'Integers']
 
-    KC2 = input.KC2.to_list()
-    input = input.drop(['KC2'], axis=1)  # Always empty
+    s_attributes = ['person_name_count',  # Columns to consider for success rate
+                    # 'person_name_boolean',
+                    'conjunction_phrase_count',
+                    'preposition_phrase_count',
+                    'math_symbols_count',
+                    'Integers',
+                    'Fraction-Decimals-Percents',
+                    'Meaning-of-PI',
+                    'Sum-of-Interior-Angles-Triangle',
+                    'Equivalent-Fractions-Decimals-Percents',
+                    'Statistics',
+                    'Fractions',
+                    'Circle-Graph',
+                    'Congruence',
+                    'Isosceles-Triangle',
+                    'Least-Common-Multiple',
+                    'Reciprocal',
+                    'Properties-of-Geometric-Figures',
+                    'Fraction-Division',
+                    'Divide-Decimals',
+                    'Symbolization-Articulation',
+                    'Linear-Area-Volume-Conversion',
+                    'Rate',
+                    'Of-Means-Multiply',
+                    'Combinatorics',
+                    'Discount',
+                    'Evaluating-Functions',
+                    'Increasing_Percent_(Sales_Tax)',
+                    'Percent-Of',
+                    'Sum-Of-Interior-Angles-more-than-3-Sides',
+                    'Inducing-Functions',
+                    'Area-of-Circle',
+                    'Venn-Diagram',
+                    'Perimeter',
+                    'Unit-Conversion',
+                    'Area']
 
-    for i in set(KC2):
-        new_col = []
-        for j in KC2:
-            if j == i:
-                new_col.append(1)
-            else:
-                new_col.append(0)
-        if i not in input:
-            input[i] = new_col
-        else:
-            print('Something has gone very wrong here.')
-            exit(1)
-
-    KC1 = input.KC1.to_list()
-    input = input.drop(['KC1'], axis=1)
-
-    for i in set(KC1):
-        new_col = []
-        for j in KC1:
-            if j == i:
-                new_col.append(1)
-            else:
-                new_col.append(0)
-        if i not in input:
-            input[i] = new_col
-        else:
-            for j in range(len(input[i])):
-                if input[i][j] == 1 and new_col[j] == 0:
-                    new_col[j] = 1
-            input[i] = new_col
-
-    KC0 = input.KC0.to_list()
-    input = input.drop(['KC0'], axis=1)
-
-    for i in set(KC0):
-        new_col = []
-        for j in KC0:
-            if j == i:
-                new_col.append(1)
-            else:
-                new_col.append(0)
-        if i not in input:
-            input[i] = new_col
-        else:
-            for j in range(len(input[i])):
-                if input[i][j] == 1 and new_col[j] == 0:
-                    new_col[j] = 1
-            input[i] = new_col
+    input_t = input.loc[:, input.columns.intersection(t_attributes)]
+    input_s = input.loc[:, input.columns.intersection(s_attributes)]
 
     print('Imported!')
-    input = input.loc[:, input.columns.notna()]
-    return input, output
+    return input_t, output_t, input_s, output_s
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    x, y = get_in_out()
-    print(x.columns)
-    print(y)
-    print('Best Params:', find_parameters(x, y))
+    x1, y1, x2, y2 = get_in_out()
+
+    params, score = find_parameters(x2, y2)
+    print('Best Params:', params)
+
+    print('Score:', score)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
