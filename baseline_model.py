@@ -16,7 +16,7 @@ def read_from_file(file_name):
 
 def split_x_y(input_data):
     x = input_data.drop(['average time to solve', 'Question', 'person_name_boolean', 'Unnamed: 17', 'num students',
-                         'tot_time_spent'], axis=1)
+                         'tot_time_spent', 'num_success', 'num_failed', 'success_rate'], axis=1)
     y = input_data['average time to solve']
     return x, y
 
