@@ -9,18 +9,17 @@ from sklearn.metrics import r2_score, mean_squared_error, make_scorer
 from sklearn.inspection import PartialDependenceDisplay
 import matplotlib.pyplot as plt
 
-from warnings import simplefilter
-from sklearn.exceptions import ConvergenceWarning
-
-simplefilter("ignore", category=ConvergenceWarning)
-
 
 def find_parameters(X, y):
     regressor = MLPRegressor(max_iter=10000, early_stopping=True)
     parameters = {
-        'hidden_layer_sizes': [(30, 30, 30), (30, 30, 30, 30), (30, 30, 30, 10), (50, 50, 50, 50), (100, 50, 50)],
-        'activation': ['logistic', 'tanh', 'relu'],
-        'solver': ['adam'],
+        'hidden_layer_sizes': [(10), (30), (50), (70), (90),
+                               (10, 10), (30, 30), (50, 50), (70, 70), (90, 90),
+                               (10, 10, 10), (30, 30, 30), (50, 50, 50), (70, 70, 70), (90, 90, 90),
+                               (10, 10, 10, 10), (30, 30, 30, 30), (50, 50, 50, 50), (70, 70, 70, 70),
+                               (90, 90, 90, 90)],
+        'activation': ['relu', 'logistic', 'tanh'],
+        'solver': ['adam', 'lbfgs'],
         'alpha': [0.001, 0.01, .05, .1],
         'learning_rate': ['adaptive'],
     }
@@ -52,17 +51,17 @@ def get_in_out():
     output_s = input['success_rate']
 
     # Remove "output" columns and other non-desirable columns from training set
-    input = input.drop(['average time to solve'], axis=1)
-    input = input.drop(['success_rate'], axis=1)
 
-    input = input.drop(['Question'], axis=1)
-    input = input.drop(['tot_time_spent'], axis=1)
-    input = input.drop(['num students'], axis=1)
-    input = input.drop(['num_success'], axis=1)
-    input = input.drop(['num_failed'], axis=1)
+    input = input.drop(['average time to solve', 'Question', 'person_name_boolean', 'Unnamed: 17', 'num students',
+                         'tot_time_spent', 'num_success', 'num_failed', 'success_rate'], axis=1)
 
-    t_attributes = ['person_name_count',  # Columns to consider for average time
-                    # 'person_name_boolean',
+    Extracted_Features = ['person_name_count', # Columns to consider for average time
+                          'conjunction_phrase_count',
+                          'preposition_phrase_count',
+                          'math_symbols_count',
+                          'question_length']
+
+    t_attributes = ['person_name_count', # Columns to consider for average time
                     'conjunction_phrase_count',
                     'preposition_phrase_count',
                     'math_symbols_count',
@@ -70,8 +69,6 @@ def get_in_out():
                     'Mean',
                     'Unit-Conversion',
                     'Inducing-Functions',
-                    'person_name_count',
-                    'conjunction_phrase_count',
                     'Percent-Of',
                     'Rate',
                     'Pattern-Finding',
@@ -87,12 +84,10 @@ def get_in_out():
                     'Sum-of-Interior-Angles-Triangle',
                     'Equivalent-Fractions-Decimals-Percents',
                     'Addition',
-                    'num_success',
                     'Fraction-Decimals-Percents',
                     'Integers']
 
-    s_attributes = ['person_name_count',  # Columns to consider for success rate
-                    # 'person_name_boolean',
+    s_attributes = ['person_name_count', # Columns to consider for success rate
                     'conjunction_phrase_count',
                     'preposition_phrase_count',
                     'math_symbols_count',
@@ -128,20 +123,28 @@ def get_in_out():
                     'Unit-Conversion',
                     'Area']
 
-    input_t = input.loc[:, input.columns.intersection(t_attributes)]
-    input_s = input.loc[:, input.columns.intersection(s_attributes)]
+    # input_t = input.loc[:, input.columns.intersection(t_attributes)]
+    # input_s = input.loc[:, input.columns.intersection(s_attributes)]
+
+    # input_t = input
+    # input_s = input
+
+    input_t = input.loc[:, input.columns.intersection(Extracted_Features)]
+    input_s = input.loc[:, input.columns.intersection(Extracted_Features)]
+
+    input_t = input.drop(Extracted_Features, axis=1)
+    input_s = input.drop(Extracted_Features, axis=1)
 
     print('Imported!')
-    return input_t, output_t, input_s, output_s
+    return input_t.values, output_t, input_s.values, output_s
 
 
-# Press the green button in the gutter to run the script.
+
 if __name__ == '__main__':
     x1, y1, x2, y2 = get_in_out()
 
-    params, score = find_parameters(x2, y2)
+    params, score = find_parameters(x1, y1)
     print('Best Params:', params)
 
     print('Score:', score)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
