@@ -1,4 +1,5 @@
-# This is a sample Python script.
+# This is a script for training and running our Neural Network Models
+# It primarily uses the MLPRegressor object from sklearn
 
 import pandas as pd
 
@@ -27,21 +28,11 @@ def find_parameters(X, y):
     search = GridSearchCV(regressor, parameters, n_jobs=-1, cv=5, scoring="r2")
     search.fit(X, y)
 
-    features = ['tot_time_spent', 'num_success']
-
-    # This was just a test for myself to see how plotting PartialDependence graphs works. Turns out: super easy
-    # graph = PartialDependenceDisplay.from_estimator(search, X, features)
-
-    # plt.show()
-
     return search.best_params_, search.best_score_
 
 
 # Preprocesses data and returns the "input" data and "ouput" data that is used to train the regressors.
 # Does not fetch burgers.
-#
-# The code for this function is based on Assignment 3 that I completed on date.
-#
 def get_in_out():
     print('importing csv...')
     input = pd.read_csv("dataHotEncoding.csv")
@@ -122,6 +113,8 @@ def get_in_out():
                     'Perimeter',
                     'Unit-Conversion',
                     'Area']
+
+    # Comment or uncomment the lines below to change the input set that the network will look use.
 
     # input_t = input.loc[:, input.columns.intersection(t_attributes)]
     # input_s = input.loc[:, input.columns.intersection(s_attributes)]
